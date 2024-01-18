@@ -1,10 +1,36 @@
 import telebot
 import webbrowser #Для открытия страниц в браузере
 from telebot import types
+import helpers.json_helpers as helpers
+import constants.app_constants as constants
+import time
+from random import randrange
+import requests
 
-bot = telebot.TeleBot()
 
+settings = helpers.get_json(constants.SETTINGS)
+bot = telebot.TeleBot(settings["bot_key"])
+#lesson 5 
+#weather bot
+@bot.message_handler(commands=["weather"])
+def get_weather(message):
+    city = ''.join(str(x) for x in message.text.split()[1:]) #split the command
+    key = settings["weather_api_key"]
+    url = settings["weather_api_endpoint"].format(city,key)
+    response = requests.get(url )
+    if not response.ok:
+        bot.send_message(message.chat.id, f"Что то пошло не так с этим городом{response.content} ")
+        return
+    bot.reply_to(message, f"мм. погодка та у нас ничего в {response.content} ")
+
+#end lesson 5
 #отправка кнопок управления ReplyKeyboardMarkup lesson 3
+@bot.message_handler(commands=["sleep"])
+def set_sleep(message):
+    sleep_sec = randrange(1, 20)
+    time.sleep(sleep_sec)
+    bot.send_message(message.chat.id, "Хорошо поспал!. мм ")
+
 @bot.message_handler(commands=["start_btn"])
 def get_files(message):
     markup = types.ReplyKeyboardMarkup()
@@ -76,6 +102,7 @@ def markdown(message):
 def go_to_website(message):
     webbrowser.open("https://yandex.ru")
 
+#отслежтваем все входящие сообщения
 @bot.message_handler()
 def handler_other_messages(message):
     bot.send_message(message.chat.id,f"Вы написали: '{message.text}'")
